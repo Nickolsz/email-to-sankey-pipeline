@@ -6,6 +6,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv()
+print('hello')
 
 HOST = os.getenv('HOST')
 USERNAME = os.getenv('USERNAME')
