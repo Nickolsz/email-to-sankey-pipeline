@@ -4,12 +4,13 @@ import os
 from bs4 import BeautifulSoup
 import pandas as pd
 from dotenv import load_dotenv
+from class_model import *
 
 load_dotenv()
 
 HOST = os.getenv('HOST')
-USERNAME = os.getenv('USERNAME')
-PASSWORD = os.getenv('PASSWORD')
+EMAIL = os.getenv('EMAIL')
+EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 EXCEL_PATH = os.getenv('EXCEL_PATH')
 
 def clean_text(text):
@@ -47,7 +48,7 @@ def fetch_and_parse_emails(mail):
 
 def email_main():
     mail = imaplib.IMAP4_SSL(HOST)
-    mail.login(USERNAME, PASSWORD)
+    mail.login(EMAIL, EMAIL_PASSWORD)
     df_existing = pd.read_excel(EXCEL_PATH)
     emails = fetch_and_parse_emails(mail)
     df_new = pd.DataFrame(emails)
@@ -55,5 +56,14 @@ def email_main():
     df_combined.to_excel(EXCEL_PATH, index=False)
     mail.logout()
 
-if __name__ == '__main__':
-    email_main()
+def email_main2():
+    mail = imaplib.IMAP4_SSL(HOST)
+    mail.login(EMAIL, EMAIL_PASSWORD)
+    emails = fetch_and_parse_emails(mail)
+    for email in emails:
+        predicted_category = predict_category(email['Body'])
+        print(f'The predicted category for the sample text is: {predicted_category}')
+
+
+email_main2()
+
