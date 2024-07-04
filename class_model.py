@@ -9,12 +9,13 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import joblib
+import psycopg2
 
 lr = joblib.load('logistic_regression_model.pkl')
 cv = joblib.load('count_vectorizer.pkl')
 lemmatizer = WordNetLemmatizer()
 
-def predict_category(text, threshold=0.5):
+def predict_category(text, threshold=0.2):
     r = re.sub('[^a-zA-Z]', ' ', text)
     r = r.lower()
     r = r.split()
@@ -61,7 +62,3 @@ if __name__ == '__main__':
 
     X_test_cv = cv.transform(X_test)
     
-
-
-
-
