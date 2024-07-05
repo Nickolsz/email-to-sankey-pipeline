@@ -27,14 +27,13 @@ def append_category(category, cur, conn, result, counter):
         (category, f"%{result[counter][0]}%"))
         
         conn.commit()
-        print(category)
-        print(result[counter][0])
+
 
 def nClick(label_update, counter, result):
     counter[0] += 1
     label_update(result, counter)
 
-def label_update(result, counter, text_box, buttons, window, on_closing):
+def label_update(result, counter, text_box, buttons, window, on_closing, on_complete):
     if counter[0] < len(result):
         text_box.config(state=NORMAL)
         text_box.delete('1.0', END)
@@ -45,8 +44,10 @@ def label_update(result, counter, text_box, buttons, window, on_closing):
             btn.destroy()
         text_box.destroy()
         on_closing(window)
+        if on_complete:
+            on_complete()
 
-def all_others():
+def all_others(on_complete=None):
     conn = create_connection()
     cur = conn.cursor()
 
@@ -61,6 +62,8 @@ def all_others():
     if not result:
         print("No emails to categorize.")
         on_closing(window, cur, conn)
+        if on_complete:
+            on_complete()
         return
 
     text_box = scrolledtext.ScrolledText(window, wrap=WORD, width=100, height=20)
@@ -73,12 +76,12 @@ def all_others():
     for i in range(len(possibilities)):
         btn = Button(window, text=possibilities[i], 
                      command=lambda i=i: [append_category(possibilities[i], cur, conn, result, counter[0]), 
-                                          nClick(lambda res, cnt: label_update(res, cnt, text_box, buttons, window, on_closing), 
+                                          nClick(lambda res, cnt: label_update(res, cnt, text_box, buttons, window, on_closing, on_complete), 
                                                  counter, result)])
         buttons.append(btn)
         btn.pack(side='left')
 
-    label_update(result, counter, text_box, buttons, window, lambda win: on_closing(win, cur, conn))
+    label_update(result, counter, text_box, buttons, window, lambda win: on_closing(win, cur, conn), on_complete)
 
     window.mainloop()
 
