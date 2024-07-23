@@ -4,8 +4,9 @@ import os
 from bs4 import BeautifulSoup
 import pandas as pd
 from dotenv import load_dotenv
-from class_model import *
+import re
 import psycopg2
+from class_MNB_model import predict_category1
 
 load_dotenv()
 
@@ -21,7 +22,10 @@ cur = conn.cursor()
 
 
 def clean_text(text):
-    return text.replace('\r', '').replace('\n', ' ')
+    text_cleaned = re.sub(r'http\S+', '', text)
+    text_cleaned = re.sub(r'\S+@\S+', '', text_cleaned)
+    text_cleaned = ' '.join(text_cleaned.split())
+    return text_cleaned
 
 def get_email_body(email_message):
     for part in email_message.walk():
@@ -58,7 +62,7 @@ def email_main():
     mail.login(EMAIL, EMAIL_PASSWORD)
     emails = fetch_and_parse_emails(mail)
     for email in emails:
-        predicted_category = predict_category(email['Body'])
+        predicted_category = predict_category1(email['Body'])
         email['Category'] = predicted_category
         cur.execute("""
              INSERT INTO fetched_emails ("From", "Date", "Subject", "Body", "Category") VALUES 
@@ -72,4 +76,3 @@ def email_main():
         
 if __name__ == '__main__':
     email_main()
-
