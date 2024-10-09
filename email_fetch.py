@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import re
 import psycopg2
 from class_MNB_model import predict_category1
+from datetime import datetime
+
 
 load_dotenv()
 
@@ -57,21 +59,48 @@ def fetch_and_parse_emails(mail):
         emails.append({'From': from_part, 'Date': date_part, 'Subject': subject_part, 'Body': body_cleaned, 'Category':''})
     return emails
 
+
+
+def parse_email_date(date_str):
+    # Try to parse the date string from the email
+    try:
+        parsed_date = datetime.strptime(date_str[:-6], '%a, %d %b %Y %H:%M:%S')
+    except ValueError:
+        # If parsing fails, log or return None
+        return None
+    return parsed_date
+
 def email_main():
     mail = imaplib.IMAP4_SSL(HOST)
     mail.login(EMAIL, EMAIL_PASSWORD)
     emails = fetch_and_parse_emails(mail)
+    
     for email in emails:
-        predicted_category = predict_category1(email['Body'])
-        email['Category'] = predicted_category
-        cur.execute("""
-             INSERT INTO fetched_emails ("From", "Date", "Subject", "Body", "Category") VALUES 
-             (%s, %s, %s, %s, %s)
-             """, (email['From'], email['Date'], email['Subject'], email['Body'], email['Category']))
-        conn.commit()
+        try:
+            predicted_category = predict_category1(email['Body'])
+            email['Category'] = predicted_category
+            email_date = parse_email_date(email['Date'])  # Convert date to proper format
+            
+            # If date parsing fails, set email_date to None (which will insert NULL in PostgreSQL)
+            if email_date is None:
+                email_date = None  # Use NULL in PostgreSQL for missing dates
+            
+            cur.execute("""
+                INSERT INTO fetched_emails ("From", "Date", "Subject", "Body", "Category") VALUES 
+                (%s, %s, %s, %s, %s)
+                """, (email['From'], email_date, email['Subject'], email['Body'], email['Category']))
+            
+            conn.commit()
+        
+        except Exception as e:
+            # If any other unexpected error occurs, skip this email and continue processing the rest
+            continue
+    
     cur.close()
     conn.close()
     mail.logout()
+
+
         
         
 if __name__ == '__main__':
